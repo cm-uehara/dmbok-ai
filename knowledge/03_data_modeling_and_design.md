@@ -37,6 +37,7 @@
 - 命名規則の一貫性（snake_case / camelCase の統一など）
 
 ### Backlog
+- Documents/Wiki のデータ関連ドキュメント
 - DB設計に関するチケット・レビュー記録
 - モデル変更の承認フロー
 - ER図やデータ辞書のWiki

@@ -8,6 +8,8 @@ backlog-exporter の出力ディレクトリを入力として受け取る。
     python tools/backlog_scan.py /path/to/backlog-export --output output/backlog_result.md
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import os
@@ -161,25 +163,47 @@ def analyze_issues(issues: list[dict]) -> dict:
     return analysis
 
 
-def analyze_wiki(wiki_pages: list[dict]) -> dict:
-    """Wikiページデータを分析する。"""
+def analyze_pages(pages: list[dict]) -> dict:
+    """Wiki / Documents ページデータを分析する。"""
     analysis = {
-        "total": len(wiki_pages),
+        "total": len(pages),
         "by_domain": defaultdict(list),
         "pages": [],
     }
 
-    for page in wiki_pages:
+    for page in pages:
         name = page.get("name", page.get("title", Path(page.get("path", "")).stem))
         content = page.get("content", page.get("content_preview", ""))
 
         domains = classify_by_dmbok(f"{name} {content}")
-        page_info = {"name": name, "domains": domains}
+        page_info = {"name": name, "domains": domains, "source": page.get("source", "不明")}
         analysis["pages"].append(page_info)
         for domain in domains:
             analysis["by_domain"][domain].append(page_info)
 
     return analysis
+
+
+def find_dir(base: str, candidates: list[str]) -> str | None:
+    """base 直下から候補名のディレクトリを探す。"""
+    for name in candidates:
+        path = os.path.join(base, name)
+        if os.path.isdir(path):
+            return path
+    return None
+
+
+def load_pages_from_dir(directory: str, source_label: str) -> list[dict]:
+    """ディレクトリから Markdown / JSON ページを読み込み、source ラベルを付与する。"""
+    pages = []
+    for item in load_markdown_files(directory):
+        item["source"] = source_label
+        pages.append(item)
+    for item in load_json_files(directory):
+        if "name" in item or "title" in item or "content" in item:
+            item["source"] = source_label
+            pages.append(item)
+    return pages
 
 
 def scan_backlog_export(export_path: str) -> dict:
@@ -188,6 +212,7 @@ def scan_backlog_export(export_path: str) -> dict:
         "export_path": os.path.abspath(export_path),
         "scan_date": datetime.now().isoformat(),
         "issues": {"total": 0, "analysis": {}},
+        "documents": {"total": 0, "analysis": {}},
         "wiki": {"total": 0, "analysis": {}},
         "files_found": defaultdict(int),
     }
@@ -197,36 +222,39 @@ def scan_backlog_export(export_path: str) -> dict:
             ext = Path(f).suffix.lower()
             result["files_found"][ext] += 1
 
-    issues_dir = None
-    wiki_dir = None
-    for candidate in ["issues", "issue", "tickets", "チケット"]:
-        path = os.path.join(export_path, candidate)
-        if os.path.isdir(path):
-            issues_dir = path
-            break
-
-    for candidate in ["wiki", "Wiki", "pages"]:
-        path = os.path.join(export_path, candidate)
-        if os.path.isdir(path):
-            wiki_dir = path
-            break
-
     all_json = load_json_files(export_path)
     issues = [item for item in all_json if "summary" in item or "title" in item or "issueKey" in item]
     if issues:
         result["issues"]["total"] = len(issues)
         result["issues"]["analysis"] = analyze_issues(issues)
 
+    # Documents（Backlog の新しいドキュメント機能）
+    docs_dir = find_dir(export_path, [
+        "documents", "Documents", "docs", "Docs",
+        "ドキュメント", "document", "Document",
+    ])
+    doc_pages = []
+    if docs_dir:
+        doc_pages = load_pages_from_dir(docs_dir, "Documents")
+    if doc_pages:
+        result["documents"]["total"] = len(doc_pages)
+        result["documents"]["analysis"] = analyze_pages(doc_pages)
+
+    # Wiki（従来のWiki機能）
+    wiki_dir = find_dir(export_path, [
+        "wiki", "Wiki", "pages", "Pages",
+    ])
     wiki_pages = []
     if wiki_dir:
-        wiki_pages = load_markdown_files(wiki_dir)
-    if not wiki_pages:
+        wiki_pages = load_pages_from_dir(wiki_dir, "Wiki")
+    if not wiki_pages and not doc_pages:
         all_md = load_markdown_files(export_path)
-        wiki_pages = [p for p in all_md if "wiki" in p["path"].lower()]
-
+        wiki_pages = [p for p in all_md if "wiki" in p["path"].lower() or "document" in p["path"].lower()]
+        for p in wiki_pages:
+            p["source"] = "Wiki"
     if wiki_pages:
         result["wiki"]["total"] = len(wiki_pages)
-        result["wiki"]["analysis"] = analyze_wiki(wiki_pages)
+        result["wiki"]["analysis"] = analyze_pages(wiki_pages)
 
     return result
 
@@ -292,15 +320,39 @@ def generate_report(data: dict) -> str:
         lines.append("データ関連のチケットは検出されませんでした。")
         lines.append("")
 
+    # Documents 分析
+    doc_analysis = data.get("documents", {}).get("analysis", {})
+    lines.append("## Documents 分析")
+    lines.append("")
+    lines.append(f"- **総ページ数**: {data.get('documents', {}).get('total', 0)}")
+    lines.append("")
+
+    doc_by_domain = doc_analysis.get("by_domain", {})
+    if doc_by_domain:
+        lines.append("### DMBOK領域別の Documents ページ")
+        lines.append("")
+        for domain in DMBOK_KEYWORDS:
+            pages = doc_by_domain.get(domain, [])
+            if pages:
+                lines.append(f"#### {domain} ({len(pages)}件)")
+                lines.append("")
+                for page in pages[:10]:
+                    lines.append(f"- {page['name']}")
+                lines.append("")
+    else:
+        lines.append("Documents は検出されませんでした。")
+        lines.append("")
+
+    # Wiki 分析
     wiki_analysis = data["wiki"].get("analysis", {})
-    lines.append("## Wiki分析")
+    lines.append("## Wiki 分析")
     lines.append("")
     lines.append(f"- **総ページ数**: {data['wiki']['total']}")
     lines.append("")
 
     wiki_by_domain = wiki_analysis.get("by_domain", {})
     if wiki_by_domain:
-        lines.append("### DMBOK領域別のWikiページ")
+        lines.append("### DMBOK領域別の Wiki ページ")
         lines.append("")
         for domain in DMBOK_KEYWORDS:
             pages = wiki_by_domain.get(domain, [])
@@ -310,6 +362,9 @@ def generate_report(data: dict) -> str:
                 for page in pages[:10]:
                     lines.append(f"- {page['name']}")
                 lines.append("")
+    else:
+        lines.append("Wiki は検出されませんでした。")
+        lines.append("")
 
     return "\n".join(lines)
 
