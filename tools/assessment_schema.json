@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DMBOK Assessment Data",
+  "description": "generate_report.py に渡すアセスメント結果の JSON 形式",
+  "type": "object",
+  "required": ["target", "date", "data_sources", "executive_summary", "scores"],
+  "properties": {
+    "target": {
+      "type": "string",
+      "description": "評価対象のリポジトリ名 / プロジェクト名"
+    },
+    "date": {
+      "type": "string",
+      "description": "評価日 (YYYY-MM-DD)"
+    },
+    "data_sources": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "データソース一覧 (例: [\"Git リポジトリ\", \"Backlog\"])"
+    },
+    "executive_summary": {
+      "type": "string",
+      "description": "エグゼクティブサマリー（1〜2段落）"
+    },
+    "scores": {
+      "type": "array",
+      "minItems": 11,
+      "maxItems": 11,
+      "items": {
+        "type": "object",
+        "required": ["id", "domain", "score", "level", "findings", "strengths", "issues", "recommendations"],
+        "properties": {
+          "id": { "type": "integer", "minimum": 1, "maximum": 11 },
+          "domain": { "type": "string", "description": "領域名" },
+          "score": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "level": { "type": "string", "description": "レベル名 (初期/反復可能/定義済み/管理済み/最適化)" },
+          "findings": { "type": "string", "description": "主な所見（1行サマリー）" },
+          "strengths": { "type": "array", "items": { "type": "string" }, "description": "強み" },
+          "issues": { "type": "array", "items": { "type": "string" }, "description": "課題" },
+          "recommendations": { "type": "array", "items": { "type": "string" }, "description": "改善提案" }
+        }
+      }
+    },
+    "roadmap": {
+      "type": "object",
+      "properties": {
+        "short_term": { "type": "array", "items": { "$ref": "#/definitions/roadmap_item" } },
+        "mid_term": { "type": "array", "items": { "$ref": "#/definitions/roadmap_item" } },
+        "long_term": { "type": "array", "items": { "$ref": "#/definitions/roadmap_item" } }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "評価の制約・留意事項"
+    }
+  },
+  "definitions": {
+    "roadmap_item": {
+      "type": "object",
+      "required": ["priority", "domain", "action", "impact"],
+      "properties": {
+        "priority": { "type": "string", "description": "高/中/低" },
+        "domain": { "type": "string" },
+        "action": { "type": "string" },
+        "impact": { "type": "string" }
+      }
+    }
+  }
+}

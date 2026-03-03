@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DMBOK アセスメントレポート — sample-project (サンプル)</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  :root {
+    --c-primary: #1e3a5f;
+    --c-accent: #2563eb;
+    --c-bg: #f8fafc;
+    --c-surface: #ffffff;
+    --c-border: #e2e8f0;
+    --c-text: #1e293b;
+    --c-muted: #64748b;
+    --radius: 10px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Segoe UI", sans-serif;
+    background: var(--c-bg);
+    color: var(--c-text);
+    line-height: 1.7;
+    font-size: 14px;
+  }
+  .container { max-width: 1080px; margin: 0 auto; padding: 24px; }
+
+  /* ===== Header ===== */
+  .report-header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+    color: #fff;
+    padding: 48px 40px;
+    border-radius: var(--radius);
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .report-header::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 500px;
+    height: 500px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+  }
+  .report-header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; position: relative; }
+  .report-header .subtitle { font-size: 15px; opacity: 0.85; position: relative; }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 24px;
+    position: relative;
+  }
+  .meta-item { background: rgba(255,255,255,0.12); border-radius: 8px; padding: 12px 16px; }
+  .meta-item .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7; }
+  .meta-item .value { font-size: 15px; font-weight: 600; margin-top: 2px; }
+
+  /* ===== Cards ===== */
+  .card {
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .card h2 { font-size: 20px; color: var(--c-primary); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid var(--c-accent); }
+  .card h3 { font-size: 16px; color: var(--c-primary); margin: 20px 0 10px; }
+
+  /* ===== Score Overview ===== */
+  .score-big {
+    text-align: center;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .score-big .number { font-size: 56px; font-weight: 800; color: var(--c-accent); line-height: 1; }
+  .score-big .of { font-size: 20px; color: var(--c-muted); font-weight: 400; }
+  .score-big .desc { font-size: 13px; color: var(--c-muted); margin-top: 4px; }
+
+  /* ===== Table ===== */
+  th {
+    background: #f1f5f9;
+    font-weight: 600;
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--c-border);
+    color: var(--c-primary);
+    white-space: nowrap;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--c-border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8fafc; }
+
+  /* ===== Score Badge ===== */
+  .score-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 16px;
+    border: 2px solid;
+  }
+  .level-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid;
+  }
+
+  /* ===== Progress Bar ===== */
+  .progress-wrap { display: flex; align-items: center; gap: 10px; }
+  .progress-bar {
+    flex: 1;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-bar .fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+
+  /* ===== Radar Chart ===== */
+  .chart-container { max-width: 520px; margin: 0 auto; padding: 10px 0 20px; }
+
+  /* ===== Domain Detail ===== */
+  .domain-card {
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .domain-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 24px;
+    border-left: 4px solid;
+  }
+  .domain-header .domain-num { font-size: 12px; color: var(--c-muted); font-weight: 600; }
+  .domain-header .domain-name { font-size: 16px; font-weight: 700; flex: 1; }
+  .domain-body { padding: 16px 24px 20px; background: #fafbfc; }
+  .domain-body h4 { font-size: 13px; font-weight: 700; color: var(--c-primary); margin: 14px 0 6px; }
+  .domain-body h4:first-child { margin-top: 0; }
+  .domain-body ul { margin: 0; padding-left: 20px; }
+  .domain-body li { margin-bottom: 4px; font-size: 13px; line-height: 1.6; }
+
+  /* ===== Roadmap ===== */
+  .roadmap-phase {
+    margin-bottom: 16px;
+    border-left: 3px solid var(--c-accent);
+    padding-left: 16px;
+  }
+  .roadmap-phase h3 { font-size: 14px; margin-bottom: 8px; }
+  .roadmap-phase table { font-size: 12.5px; }
+
+  /* ===== Footer ===== */
+  .report-footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--c-muted);
+    font-size: 12px;
+    border-top: 1px solid var(--c-border);
+    margin-top: 16px;
+  }
+
+  /* ===== Table overflow ===== */
+  .table-wrap { width: 100%; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+  td, th { word-wrap: break-word; overflow-wrap: break-word; }
+
+  /* ===== Print / PDF ===== */
+  @media print {
+    body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .container { padding: 0; max-width: 100%; width: 100%; }
+    .card { box-shadow: none; break-inside: avoid; }
+    .domain-card { break-inside: avoid; }
+    .report-header { padding: 32px 28px; border-radius: 6px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ===== HEADER ===== -->
+  <div class="report-header">
+    <h1>DMBOK アセスメントレポート</h1>
+    <div class="subtitle">データマネジメント成熟度診断</div>
+    <div class="meta-grid">
+      <div class="meta-item">
+        <div class="label">対象</div>
+        <div class="value">sample-project (サンプル)</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">評価日</div>
+        <div class="value">2026-03-03</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">データソース</div>
+        <div class="value">Git リポジトリ, Backlog</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">平均スコア</div>
+        <div class="value">2.4 / 5.0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== EXECUTIVE SUMMARY ===== -->
+  <div class="card">
+    <h2>エグゼクティブサマリー</h2>
+    <p>全体として成熟度レベル2〜3の段階にあり、基本的な仕組みは整いつつあるが、標準化・文書化が不十分な領域が散見される。特にデータガバナンスとメタデータ管理の強化が急務であり、これらを優先的に改善することで他領域への波及効果も期待できる。セキュリティとデータモデリングは比較的良好な状態にある。</p>
+  </div>
+
+  <!-- ===== SCORE OVERVIEW ===== -->
+  <div class="card">
+    <h2>スコア一覧</h2>
+    <div class="score-big">
+      <span class="number">2.4</span>
+      <span class="of"> / 5.0</span>
+      <div class="desc">11領域の平均成熟度スコア</div>
+    </div>
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:5%">#</th>
+          <th style="width:18%">領域</th>
+          <th style="width:8%;text-align:center">スコア</th>
+          <th style="width:12%">レベル</th>
+          <th style="width:22%">成熟度</th>
+          <th style="width:35%">主な所見</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>1</td>
+          <td style="font-weight:600">データガバナンス</td>
+          <td style="text-align:center">
+            <span class="score-badge" style="background:#fff7ed;border-color:#f97316;color:#ea580c">2</span>
+          </td>
+          <td>
+            <span class="level-tag" style="background:#fff7ed;border-color:#f97316;color:#ea580c">反復可能</span>
+          </td>
+          <td>
+            <div class="progress-wrap">
+              <div class="progress-bar"><div class="fill" style="width:40.0%;background:#f97316"></div></div>
+              <span style="font-size:12px;color:var(--c-muted)">2/5</span>
+            </div>
+          </td>
+          <td style="font-size:12.5px;color:var(--c-muted)">一部チームにルールはあるが組織横断の標準がない</td>
+        </tr>
+        
+        <tr>
+          <td>2</td>
+          <td style="font-weight:600">データアーキテクチャ</td>
+          <td style="text-align:center">
+            <span class="score-badge" style="background:#fefce8;border-color:#eab308;color:#ca8a04">3</span>
+          </td>
+          <td>
+            <span class="level-tag" style="background:#fefce8;border-color:#eab308;color:#ca8a04">定義済み</span>
+          </td>
+          <td>
+            <div class="progress-wrap">
+              <div class="progress-bar"><div class="fill" style="width:60.0%;background:#eab308"></div></div>
+              <span style="font-size:12px;color:var(--c-muted)">3/5</span>
+            </div>
+          </td>
+          <td style="font-size:12.5px;color:var(--c-muted)">アーキテクチャ図とAPI仕様書が整備されている</td>
+        </tr>
+        
+        <tr>
+          <td>3</td>
+          <td style="font-weight:600">データモデリングとデザイン</td>
+          <td style="text-align:center">
+            <span class="score-badge" style="background:#fefce8;border-color:#eab308;color:#ca8a04">3</span>
+          </td>
+          <td>
+            <span class="level-tag" style="background:#fefce8;border-color:#eab308;color:#ca8a04">定義済み</span>
+          </td>
+          <td>
+            <div class="progress-wrap">
+              <div class="progress-bar"><div class="fill" style="width:60.0%;background:#eab308"></div></div>
+              <span style="font-size:12px;color:var(--c-muted)">3/5</span>
+            </div>
+          </td>
+          <td style="font-size:12.5px;color:var(--c-muted)">DDL が管理され命名規則が概ね統一されている</td>
+        </tr>
+        
+        <tr>
+          <td>4</td>
+          <td style="font-weight:600">データストレージとオペレーション</td>
+          <td style="text-align:center">
+            <span class="score-badge" style="background:#fff7ed;border-color:#f97316;color:#ea580c">2</span>
+          </td>
+          <td>
+            <span class="level-tag" style="background:#fff7ed;border-color:#f97316;color:#ea580c">反復可能</span>
+          </td>
+          <td>
+            <div class="progress-wrap">
+              <div class="progress-bar"><div class="fill" style="width:40.0%;background:#f97316"></div></div>
+              <span style="font-size:12px;color:var(--c-muted)">2/5</span>
+            </div>
+          </td>
+          <td style="font-size:12.5px;color:var(--c-muted)">バックアップはあるがリストアテスト未実施</td>
+        </tr>
+        
+        <tr>
+          <td>5</td>
+          <td style="font-weight:600">データセキュリティ</td>
+          <td style="text-align:center">
+            <span class="score-badge" style="background:#eff6ff;border-color:#3b82f6;color:#2563eb">4</span>
+          </td>
+          <td>
+            <span class="level-tag" style="background:#eff6ff;border-color:#3b82f6;color:#2563eb">管理済み</span>
+          </td>
+          <td>
+            <div class="progress-wrap">
+              <div class="progress-bar"><div class="fill" style="width:80.0%;background:#3b82f6"></div></div>
+              <span style="font-size:12px;color:var(--c-muted)">4/5</span>
+            </div>
+          </td>
+          <td style="font-size:12.5px;color:var(--c-muted)">.env がコミットされておらず、CI にセキュリティスキャンあり</td>
+        </tr>
+        
+        <tr>
+          <td>6</td>
+          <td style="font-weight:600">データ統合と相互運用性</td>
+          <td style="text-align:center">
+            <span class="score-badge" style="background:#fefce8;border-color:#eab308;color:#ca8a04">3</span>
+          </td>
+          <td>
+            <span class="level-tag" style="background:#fefce8;border-color:#eab308;color:#ca8a04">定義済み</span>
+          </td>
+          <td>
+            <div class="progress-wrap">
+              <div class="progress-bar"><div class="fill" style="width:60.0%;background:#eab308"></div></div>
+              <span style="font-size:12px;color:var(--c-muted)">3/5</span>
+            </div>
+          </td>
+          <td style="font-size:12.5px;color:var(--c-muted)">REST API で連携が標準化されている</td>
+        </tr>
+        
+        <tr>
+          <td>7</td>
+          <td style="font-weight:600">ドキュメントとコンテンツ管理</td>
+          <td style="text-align:center">
+            <span class="score-badge" style="background:#fefce8;border-color:#eab308;color:#ca8a04">3</span>
+          </td>
+          <td>
+            <span class="level-tag" style="background:#fefce8;border-color:#eab308;color:#ca8a04">定義済み</span>
+          </td>
+          <td>
+            <div class="progress-wrap">
+              <div class="progress-bar"><div class="fill" style="width:60.0%;background:#eab308"></div></div>
+              <span style="font-size:12px;color:var(--c-muted)">3/5</span>
+            </div>
+          </td>
+          <td style="font-size:12.5px;color:var(--c-muted)">README と docs/ が整備されているがレビュー体制が弱い</td>
+        </tr>
+        
+        <tr>
+          <td>8</td>
+          <td style="font-weight:600">参照データとマスターデータ</td>
+          <td style="text-align:center">
+            <span class="score-badge" style="background:#fff7ed;border-color:#f97316;color:#ea580c">2</span>
+          </td>
+          <td>
+            <span class="level-tag" style="background:#fff7ed;border-color:#f97316;color:#ea580c">反復可能</span>
+          </td>
+          <td>
+            <div class="progress-wrap">
+              <div class="progress-bar"><div class="fill" style="width:40.0%;background:#f97316"></div></div>
+              <span style="font-size:12px;color:var(--c-muted)">2/5</span>
+            </div>
+          </td>
+          <td style="font-size:12.5px;color:var(--c-muted)">Enum 定義はあるがマスターデータの正本が未定義</td>
+        </tr>
+        
+        <tr>
+          <td>9</td>
+          <td style="font-weight:600">データウェアハウスとBI</td>
+          <td style="text-align:center">
+            <span class="score-badge" style="background:#fef2f2;border-color:#ef4444;color:#dc2626">1</span>
+          </td>
+          <td>
+            <span class="level-tag" style="background:#fef2f2;border-color:#ef4444;color:#dc2626">初期</span>
+          </td>
+          <td>
+            <div class="progress-wrap">
+              <div class="progress-bar"><div class="fill" style="width:20.0%;background:#ef4444"></div></div>
+              <span style="font-size:12px;color:var(--c-muted)">1/5</span>
+            </div>
+          </td>
+          <td style="font-size:12.5px;color:var(--c-muted)">分析基盤がなく Excel ベースの分析</td>
+        </tr>
+        
+        <tr>
+          <td>10</td>
+          <td style="font-weight:600">メタデータ管理</td>
+          <td style="text-align:center">
+            <span class="score-badge" style="background:#fef2f2;border-color:#ef4444;color:#dc2626">1</span>
+          </td>
+          <td>
+            <span class="level-tag" style="background:#fef2f2;border-color:#ef4444;color:#dc2626">初期</span>
+          </td>
+          <td>
+            <div class="progress-wrap">
+              <div class="progress-bar"><div class="fill" style="width:20.0%;background:#ef4444"></div></div>
+              <span style="font-size:12px;color:var(--c-muted)">1/5</span>
+            </div>
+          </td>
+          <td style="font-size:12.5px;color:var(--c-muted)">テーブルコメントやデータ辞書が存在しない</td>
+        </tr>
+        
+        <tr>
+          <td>11</td>
+          <td style="font-weight:600">データ品質</td>
+          <td style="text-align:center">
+            <span class="score-badge" style="background:#fff7ed;border-color:#f97316;color:#ea580c">2</span>
+          </td>
+          <td>
+            <span class="level-tag" style="background:#fff7ed;border-color:#f97316;color:#ea580c">反復可能</span>
+          </td>
+          <td>
+            <div class="progress-wrap">
+              <div class="progress-bar"><div class="fill" style="width:40.0%;background:#f97316"></div></div>
+              <span style="font-size:12px;color:var(--c-muted)">2/5</span>
+            </div>
+          </td>
+          <td style="font-size:12.5px;color:var(--c-muted)">基本的なバリデーションはあるが品質監視がない</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- ===== RADAR CHART ===== -->
+  <div class="card">
+    <h2>成熟度レーダーチャート</h2>
+    <div class="chart-container">
+      <canvas id="radarChart"></canvas>
+    </div>
+  </div>
+
+  <!-- ===== DOMAIN DETAILS ===== -->
+  <div class="card">
+    <h2>領域別詳細</h2>
+    
+    <div class="domain-card">
+      <div class="domain-header" style="border-left-color:#f97316;background:#fff7ed">
+        <div>
+          <div class="domain-num">#01</div>
+          <div class="domain-name">データガバナンス</div>
+        </div>
+        <span class="score-badge" style="background:#fff7ed;border-color:#f97316;color:#ea580c;font-size:20px;width:48px;height:48px">2</span>
+        <span class="level-tag" style="background:var(--c-surface);border-color:#f97316;color:#ea580c">反復可能</span>
+      </div>
+      <div class="domain-body">
+        
+        <h4>強み</h4>
+        <ul><li>PR レビュープロセスが存在する</li><li>CONTRIBUTING.md が整備されている</li></ul>
+        
+        
+        <h4>課題</h4>
+        <ul><li>データオーナーが定義されていない</li><li>ガバナンスポリシー文書が存在しない</li></ul>
+        
+        
+        <h4>改善提案（次のレベルへ）</h4>
+        <ul><li>データオーナー・スチュワードの任命</li><li>データガバナンスポリシーの策定と公開</li></ul>
+        
+      </div>
+    </div>
+    
+    <div class="domain-card">
+      <div class="domain-header" style="border-left-color:#eab308;background:#fefce8">
+        <div>
+          <div class="domain-num">#02</div>
+          <div class="domain-name">データアーキテクチャ</div>
+        </div>
+        <span class="score-badge" style="background:#fefce8;border-color:#eab308;color:#ca8a04;font-size:20px;width:48px;height:48px">3</span>
+        <span class="level-tag" style="background:var(--c-surface);border-color:#eab308;color:#ca8a04">定義済み</span>
+      </div>
+      <div class="domain-body">
+        
+        <h4>強み</h4>
+        <ul><li>docs/architecture/ に全体構成図がある</li><li>OpenAPI 仕様が最新に保たれている</li></ul>
+        
+        
+        <h4>課題</h4>
+        <ul><li>データフロー図が一部古い</li><li>ADR が導入されていない</li></ul>
+        
+        
+        <h4>改善提案（次のレベルへ）</h4>
+        <ul><li>ADR (Architecture Decision Records) の導入</li><li>データフロー図の自動生成検討</li></ul>
+        
+      </div>
+    </div>
+    
+    <div class="domain-card">
+      <div class="domain-header" style="border-left-color:#eab308;background:#fefce8">
+        <div>
+          <div class="domain-num">#03</div>
+          <div class="domain-name">データモデリングとデザイン</div>
+        </div>
+        <span class="score-badge" style="background:#fefce8;border-color:#eab308;color:#ca8a04;font-size:20px;width:48px;height:48px">3</span>
+        <span class="level-tag" style="background:var(--c-surface);border-color:#eab308;color:#ca8a04">定義済み</span>
+      </div>
+      <div class="domain-body">
+        
+        <h4>強み</h4>
+        <ul><li>Alembic によるマイグレーション管理</li><li>命名規則が snake_case で統一</li></ul>
+        
+        
+        <h4>課題</h4>
+        <ul><li>ER図が自動生成されていない</li><li>一部テーブルに外部キー制約が未設定</li></ul>
+        
+        
+        <h4>改善提案（次のレベルへ）</h4>
+        <ul><li>DDL からの ER 図自動生成を CI に組み込む</li><li>外部キー制約の見直し</li></ul>
+        
+      </div>
+    </div>
+    
+    <div class="domain-card">
+      <div class="domain-header" style="border-left-color:#f97316;background:#fff7ed">
+        <div>
+          <div class="domain-num">#04</div>
+          <div class="domain-name">データストレージとオペレーション</div>
+        </div>
+        <span class="score-badge" style="background:#fff7ed;border-color:#f97316;color:#ea580c;font-size:20px;width:48px;height:48px">2</span>
+        <span class="level-tag" style="background:var(--c-surface);border-color:#f97316;color:#ea580c">反復可能</span>
+      </div>
+      <div class="domain-body">
+        
+        <h4>強み</h4>
+        <ul><li>docker-compose.yml でローカル環境が再現可能</li><li>日次バックアップスクリプトが存在</li></ul>
+        
+        
+        <h4>課題</h4>
+        <ul><li>リストアテスト手順がない</li><li>パフォーマンス監視が未導入</li></ul>
+        
+        
+        <h4>改善提案（次のレベルへ）</h4>
+        <ul><li>リストアテスト手順の策定と定期実施</li><li>スロークエリログの監視開始</li></ul>
+        
+      </div>
+    </div>
+    
+    <div class="domain-card">
+      <div class="domain-header" style="border-left-color:#3b82f6;background:#eff6ff">
+        <div>
+          <div class="domain-num">#05</div>
+          <div class="domain-name">データセキュリティ</div>
+        </div>
+        <span class="score-badge" style="background:#eff6ff;border-color:#3b82f6;color:#2563eb;font-size:20px;width:48px;height:48px">4</span>
+        <span class="level-tag" style="background:var(--c-surface);border-color:#3b82f6;color:#2563eb">管理済み</span>
+      </div>
+      <div class="domain-body">
+        
+        <h4>強み</h4>
+        <ul><li>.gitignore で機密ファイルを適切に除外</li><li>GitHub Actions に dependabot と SAST を設定</li><li>RBAC による認可が実装済み</li></ul>
+        
+        
+        <h4>課題</h4>
+        <ul><li>データマスキング方針が未策定</li><li>監査ログの保持期間が未定義</li></ul>
+        
+        
+        <h4>改善提案（次のレベルへ）</h4>
+        <ul><li>テスト環境向けデータマスキング方針の策定</li><li>監査ログの保持期間ポリシー定義</li></ul>
+        
+      </div>
+    </div>
+    
+    <div class="domain-card">
+      <div class="domain-header" style="border-left-color:#eab308;background:#fefce8">
+        <div>
+          <div class="domain-num">#06</div>
+          <div class="domain-name">データ統合と相互運用性</div>
+        </div>
+        <span class="score-badge" style="background:#fefce8;border-color:#eab308;color:#ca8a04;font-size:20px;width:48px;height:48px">3</span>
+        <span class="level-tag" style="background:var(--c-surface);border-color:#eab308;color:#ca8a04">定義済み</span>
+      </div>
+      <div class="domain-body">
+        
+        <h4>強み</h4>
+        <ul><li>OpenAPI に基づく API 設計</li><li>リトライ機構が実装されている</li></ul>
+        
+        
+        <h4>課題</h4>
+        <ul><li>データリネージが追跡できない</li><li>エラー時の通知が一部手動</li></ul>
+        
+        
+        <h4>改善提案（次のレベルへ）</h4>
+        <ul><li>データリネージツールの導入検討</li><li>エラー通知の自動化</li></ul>
+        
+      </div>
+    </div>
+    
+    <div class="domain-card">
+      <div class="domain-header" style="border-left-color:#eab308;background:#fefce8">
+        <div>
+          <div class="domain-num">#07</div>
+          <div class="domain-name">ドキュメントとコンテンツ管理</div>
+        </div>
+        <span class="score-badge" style="background:#fefce8;border-color:#eab308;color:#ca8a04;font-size:20px;width:48px;height:48px">3</span>
+        <span class="level-tag" style="background:var(--c-surface);border-color:#eab308;color:#ca8a04">定義済み</span>
+      </div>
+      <div class="domain-body">
+        
+        <h4>強み</h4>
+        <ul><li>README.md にセットアップ手順が詳細に記載</li><li>docs/ ディレクトリに設計書が集約</li></ul>
+        
+        
+        <h4>課題</h4>
+        <ul><li>ドキュメントの最終更新日が古いものがある</li><li>CHANGELOG.md が未整備</li></ul>
+        
+        
+        <h4>改善提案（次のレベルへ）</h4>
+        <ul><li>CHANGELOG.md の運用開始</li><li>ドキュメント鮮度チェックの仕組み導入</li></ul>
+        
+      </div>
+    </div>
+    
+    <div class="domain-card">
+      <div class="domain-header" style="border-left-color:#f97316;background:#fff7ed">
+        <div>
+          <div class="domain-num">#08</div>
+          <div class="domain-name">参照データとマスターデータ</div>
+        </div>
+        <span class="score-badge" style="background:#fff7ed;border-color:#f97316;color:#ea580c;font-size:20px;width:48px;height:48px">2</span>
+        <span class="level-tag" style="background:var(--c-surface);border-color:#f97316;color:#ea580c">反復可能</span>
+      </div>
+      <div class="domain-body">
+        
+        <h4>強み</h4>
+        <ul><li>主要な区分値が Enum で管理されている</li></ul>
+        
+        
+        <h4>課題</h4>
+        <ul><li>マスターデータの一覧・定義文書がない</li><li>複数システム間で顧客データが重複</li></ul>
+        
+        
+        <h4>改善提案（次のレベルへ）</h4>
+        <ul><li>マスターデータ一覧の策定</li><li>顧客データの正本（Golden Record）定義</li></ul>
+        
+      </div>
+    </div>
+    
+    <div class="domain-card">
+      <div class="domain-header" style="border-left-color:#ef4444;background:#fef2f2">
+        <div>
+          <div class="domain-num">#09</div>
+          <div class="domain-name">データウェアハウスとBI</div>
+        </div>
+        <span class="score-badge" style="background:#fef2f2;border-color:#ef4444;color:#dc2626;font-size:20px;width:48px;height:48px">1</span>
+        <span class="level-tag" style="background:var(--c-surface);border-color:#ef4444;color:#dc2626">初期</span>
+      </div>
+      <div class="domain-body">
+        
+        <h4>強み</h4>
+        <ul><li>分析ニーズの認識はある</li></ul>
+        
+        
+        <h4>課題</h4>
+        <ul><li>DWH / データマートが未構築</li><li>KPI が定義されていない</li><li>Excel での手動集計が主流</li></ul>
+        
+        
+        <h4>改善提案（次のレベルへ）</h4>
+        <ul><li>主要 KPI の定義ワークショップ実施</li><li>簡易 BI ツール（Metabase 等）の導入検討</li></ul>
+        
+      </div>
+    </div>
+    
+    <div class="domain-card">
+      <div class="domain-header" style="border-left-color:#ef4444;background:#fef2f2">
+        <div>
+          <div class="domain-num">#10</div>
+          <div class="domain-name">メタデータ管理</div>
+        </div>
+        <span class="score-badge" style="background:#fef2f2;border-color:#ef4444;color:#dc2626;font-size:20px;width:48px;height:48px">1</span>
+        <span class="level-tag" style="background:var(--c-surface);border-color:#ef4444;color:#dc2626">初期</span>
+      </div>
+      <div class="domain-body">
+        
+        <h4>強み</h4>
+        <ul><li>ORM モデルに一部 docstring がある</li></ul>
+        
+        
+        <h4>課題</h4>
+        <ul><li>DDL にテーブル・カラムコメントがない</li><li>データカタログが未導入</li><li>ビジネス用語集が存在しない</li></ul>
+        
+        
+        <h4>改善提案（次のレベルへ）</h4>
+        <ul><li>DDL へのコメント追加を必須ルール化</li><li>ビジネス用語集の策定開始</li></ul>
+        
+      </div>
+    </div>
+    
+    <div class="domain-card">
+      <div class="domain-header" style="border-left-color:#f97316;background:#fff7ed">
+        <div>
+          <div class="domain-num">#11</div>
+          <div class="domain-name">データ品質</div>
+        </div>
+        <span class="score-badge" style="background:#fff7ed;border-color:#f97316;color:#ea580c;font-size:20px;width:48px;height:48px">2</span>
+        <span class="level-tag" style="background:var(--c-surface);border-color:#f97316;color:#ea580c">反復可能</span>
+      </div>
+      <div class="domain-body">
+        
+        <h4>強み</h4>
+        <ul><li>入力バリデーションが実装されている</li><li>NOT NULL 制約が主要カラムに設定</li></ul>
+        
+        
+        <h4>課題</h4>
+        <ul><li>データ品質の定量的な測定がない</li><li>重複検知の仕組みがない</li></ul>
+        
+        
+        <h4>改善提案（次のレベルへ）</h4>
+        <ul><li>データ品質テストフレームワークの導入</li><li>品質ダッシュボードの構築検討</li></ul>
+        
+      </div>
+    </div>
+    
+  </div>
+
+  <!-- ===== ROADMAP ===== -->
+  
+  <div class="card">
+    <h2>総合的な改善ロードマップ</h2>
+
+    
+    <div class="roadmap-phase">
+      <h3>短期（1〜3ヶ月）— クイックウィン</h3>
+      <table>
+        <thead><tr><th>優先度</th><th>領域</th><th>アクション</th><th>期待効果</th></tr></thead>
+        <tbody>
+          
+          <tr><td>高</td><td>メタデータ管理</td><td>DDL コメント追加の必須ルール化</td><td>データの理解容易性が向上</td></tr>
+          
+          <tr><td>高</td><td>データガバナンス</td><td>データオーナーの任命</td><td>責任の明確化、意思決定の迅速化</td></tr>
+          
+          <tr><td>中</td><td>ドキュメント管理</td><td>CHANGELOG.md の運用開始</td><td>変更追跡の透明性向上</td></tr>
+          
+        </tbody>
+      </table>
+    </div>
+    
+
+    
+    <div class="roadmap-phase">
+      <h3>中期（3〜6ヶ月）— 基盤整備</h3>
+      <table>
+        <thead><tr><th>優先度</th><th>領域</th><th>アクション</th><th>期待効果</th></tr></thead>
+        <tbody>
+          
+          <tr><td>高</td><td>データガバナンス</td><td>ガバナンスポリシーの策定</td><td>組織横断のデータ管理基盤</td></tr>
+          
+          <tr><td>中</td><td>DWH/BI</td><td>Metabase 等の BI ツール導入</td><td>データドリブンな意思決定の基盤</td></tr>
+          
+          <tr><td>中</td><td>データ品質</td><td>品質テストフレームワーク導入</td><td>品質問題の早期検知</td></tr>
+          
+        </tbody>
+      </table>
+    </div>
+    
+
+    
+    <div class="roadmap-phase">
+      <h3>長期（6ヶ月〜）— 構造的改善</h3>
+      <table>
+        <thead><tr><th>優先度</th><th>領域</th><th>アクション</th><th>期待効果</th></tr></thead>
+        <tbody>
+          
+          <tr><td>中</td><td>マスターデータ</td><td>MDM 基盤の検討</td><td>データ一貫性の確保</td></tr>
+          
+          <tr><td>中</td><td>データ統合</td><td>データリネージの可視化</td><td>影響分析の効率化</td></tr>
+          
+        </tbody>
+      </table>
+    </div>
+    
+  </div>
+  
+
+  <!-- ===== LIMITATIONS ===== -->
+  
+  <div class="card">
+    <h2>評価の制約・留意事項</h2>
+    <ul>
+      
+      <li>リポジトリのコードと設定ファイルのみから評価しており、運用プロセスや組織体制は評価対象外</li>
+      
+      <li>Backlog のチケット内容はサマリーのみで詳細な議論内容は未分析</li>
+      
+      <li>DWH/BI の評価はインフラ構成の有無のみで判断しており、実際の分析活用度は未確認</li>
+      
+    </ul>
+  </div>
+  
+
+  <!-- ===== FOOTER ===== -->
+  <div class="report-footer">
+    このレポートは DMBOK AI Assessment Skill により自動生成されました。 | 生成日時: 2026-03-03 14:47
+  </div>
+
+</div>
+
+<script>
+const ctx = document.getElementById('radarChart').getContext('2d');
+const labels = ["ガバナンス", "アーキテクチャ", "モデリング", "ストレージ/運用", "セキュリティ", "統合/相互運用", "ドキュメント", "マスターデータ", "DWH/BI", "メタデータ", "データ品質"];
+const values = [2, 3, 3, 2, 4, 3, 3, 2, 1, 1, 2];
+
+new Chart(ctx, {
+  type: 'radar',
+  data: {
+    labels: labels,
+    datasets: [{
+      label: '成熟度スコア',
+      data: values,
+      backgroundColor: 'rgba(37, 99, 235, 0.15)',
+      borderColor: 'rgba(37, 99, 235, 0.8)',
+      borderWidth: 2,
+      pointBackgroundColor: 'rgba(37, 99, 235, 1)',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: true,
+    scales: {
+      r: {
+        min: 0,
+        max: 5,
+        ticks: { stepSize: 1, font: { size: 11 }, backdropColor: 'transparent' },
+        grid: { color: 'rgba(0,0,0,0.08)' },
+        angleLines: { color: 'rgba(0,0,0,0.08)' },
+        pointLabels: { font: { size: 12, weight: '600' }, color: '#1e293b' },
+      }
+    },
+    plugins: {
+      legend: { display: false },
+    },
+    animation: { duration: 0 },
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+---
+description: DMBOKスコアリング実行時のルール。DMBOK診断・アセスメント・スコアリングを行う際に適用する。
+globs:
+  - "knowledge/**"
+  - "output/**"
+  - "tools/**"
+---
+
+# DMBOK スコアリングルール
+
+## 基本方針
+
+- スコアリングは `knowledge/` 配下の成熟度レベル定義に厳密に基づいて行う
+- 根拠のない高評価・低評価はしない。必ず具体的なエビデンスを示す
+- 情報が不足している場合は「評価不能」とし、推測でスコアを付けない
+
+## スコアリング基準
+
+- レベル1〜5の成熟度モデルを使用する
+- 各領域のスコアは、該当する `knowledge/XX_*.md` の「成熟度レベル定義」セクションに基づく
+- 複数のチェック項目が異なるレベルに該当する場合は、加重平均ではなく最も該当するレベルを選択する
+
+## レポート作成ルール
+
+- Markdownレポートは `output/assessment_YYYYMMDD.md` に出力する
+- リッチレポート用 JSON は `output/assessment_YYYYMMDD.json` に出力する（スキーマ: `tools/assessment_schema.json`）
+- JSON を作成後、`python tools/generate_report.py output/assessment_YYYYMMDD.json --out-dir output/` で HTML を生成する
+- PDF も必要な場合は `--pdf` フラグを追加する
+- 日本語で記述する
+- 各領域の評価には、リポジトリ内の具体的なファイルパスやBacklogチケット番号を引用する
+- 改善提案は「次のレベルに到達するために必要なアクション」として記述する
+
+## データ収集ツールの使用
+
+- Git リポジトリ走査: `python tools/git_scan.py <path>`
+- Backlog データ走査: `python tools/backlog_scan.py <path>`
+- リッチレポート生成: `python tools/generate_report.py <json_path> [--pdf] [--out-dir <dir>]`
+- ツール実行前に依存パッケージが必要: `pip install -r tools/requirements.txt`
