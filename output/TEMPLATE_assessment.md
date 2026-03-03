@@ -29,16 +29,9 @@
 
 **平均スコア**: X.X / 5.0
 
-## スコア分布（レーダーチャート）
+## スコア分布
 
-```mermaid
-%%{init: {"theme": "default"}}%%
-radar-beta
-  title DMBOK 成熟度スコア
-  axis DataGov["データガバナンス"], DataArch["データアーキテクチャ"], Modeling["モデリング"], Storage["ストレージ/運用"], Security["セキュリティ"], Integration["統合/相互運用"], DocMgmt["ドキュメント管理"], MasterData["マスターデータ"], DwhBi["DWH/BI"], Metadata["メタデータ"], Quality["データ品質"]
-  curve1 "現在のスコア" { DataGov: 0, DataArch: 0, Modeling: 0, Storage: 0, Security: 0, Integration: 0, DocMgmt: 0, MasterData: 0, DwhBi: 0, Metadata: 0, Quality: 0 }
-  max 5
-```
+> レーダーチャートは HTML/PDF レポート（`generate_report.py`）で Chart.js により描画する。
 
 ---
 
