@@ -74,6 +74,9 @@ DMBOK_KEYWORDS = {
 }
 
 
+import re
+
+
 def load_json_files(directory: str) -> list[dict]:
     """ディレクトリ内のJSONファイルを読み込む。"""
     results = []
@@ -111,6 +114,75 @@ def load_markdown_files(directory: str) -> list[dict]:
                     })
                 except UnicodeDecodeError:
                     pass
+    return results
+
+
+def _extract_field(text: str, label: str) -> str:
+    """Markdown の「- ラベル: 値」形式からフィールド値を抽出する。"""
+    pattern = rf"^-\s*{re.escape(label)}:\s*(.+)$"
+    m = re.search(pattern, text, re.MULTILINE)
+    return m.group(1).strip() if m else ""
+
+
+def parse_issue_markdown(filepath: str) -> dict | None:
+    """backlog-exporter が出力したチケット Markdown を構造化データにパースする。
+
+    期待するフォーマット:
+        # タイトル
+        ## 基本情報
+        - 課題キー: XXXX-NNN
+        - ステータス: 完了
+        - 優先度: 中
+        - 担当者: XXX
+        - 作成日時: ...
+        - 更新日時: ...
+        ## 詳細
+        (本文)
+    """
+    try:
+        with open(filepath, "r", encoding="utf-8") as fh:
+            content = fh.read()
+    except (UnicodeDecodeError, OSError):
+        return None
+
+    title_match = re.match(r"^#\s+(.+)$", content, re.MULTILINE)
+    title = title_match.group(1).strip() if title_match else Path(filepath).stem
+
+    issue_key = _extract_field(content, "課題キー")
+    if not issue_key:
+        return None
+
+    status = _extract_field(content, "ステータス")
+    priority = _extract_field(content, "優先度")
+    assignee = _extract_field(content, "担当者")
+
+    description = ""
+    detail_match = re.search(r"^## 詳細\s*\n(.*?)(?=^## |\Z)", content, re.MULTILINE | re.DOTALL)
+    if detail_match:
+        description = detail_match.group(1).strip()
+
+    return {
+        "summary": title,
+        "issueKey": issue_key,
+        "status": {"name": status} if status else {"name": "不明"},
+        "issueType": {"name": "課題"},
+        "priority": priority,
+        "assignee": assignee,
+        "description": description,
+        "source_file": filepath,
+    }
+
+
+def load_issue_markdowns(directory: str) -> list[dict]:
+    """ディレクトリ内のチケット Markdown ファイルをパースして返す。"""
+    results = []
+    for root, _, files in os.walk(directory):
+        for f in files:
+            if not f.endswith(".md"):
+                continue
+            parsed = parse_issue_markdown(os.path.join(root, f))
+            if parsed:
+                results.append(parsed)
     return results
 
 
@@ -222,8 +294,24 @@ def scan_backlog_export(export_path: str) -> dict:
             ext = Path(f).suffix.lower()
             result["files_found"][ext] += 1
 
-    all_json = load_json_files(export_path)
-    issues = [item for item in all_json if "summary" in item or "title" in item or "issueKey" in item]
+    # チケット（issues）の検出 — JSON 形式と Markdown 形式の両方に対応
+    issues = []
+
+    issues_dir = find_dir(export_path, [
+        "issues", "issue", "tickets", "チケット",
+    ])
+
+    # 1) JSON 形式のチケット
+    json_search_dir = issues_dir or export_path
+    all_json = load_json_files(json_search_dir)
+    json_issues = [item for item in all_json if "summary" in item or "title" in item or "issueKey" in item]
+    issues.extend(json_issues)
+
+    # 2) Markdown 形式のチケット（backlog-exporter の出力形式）
+    if issues_dir:
+        md_issues = load_issue_markdowns(issues_dir)
+        issues.extend(md_issues)
+
     if issues:
         result["issues"]["total"] = len(issues)
         result["issues"]["analysis"] = analyze_issues(issues)
