@@ -26,10 +26,9 @@ dmbok-ai/
 │   ├── 09_data_warehousing_and_bi.md  # DWHとBI
 │   ├── 10_metadata_management.md      # メタデータ管理
 │   └── 11_data_quality.md             # データ品質
-├── CLAUDE.md                          # Claude Code 向け指示
-├── skills/                            # スキル本体（環境非依存）
+├── .claude/skills/                    # Agent Skills 標準準拠
 │   ├── dmbok-assess/                  # DMBOK診断スキル
-│   │   ├── README.md                  # スキルの指示本体
+│   │   ├── SKILL.md                   # スキル定義（frontmatter + 指示）
 │   │   ├── scripts/                   # データ収集・レポート生成ツール
 │   │   │   ├── git_scan.py            # Gitリポジトリ走査
 │   │   │   ├── backlog_scan.py        # Backlogエクスポートデータ走査
@@ -41,10 +40,7 @@ dmbok-ai/
 │   │       ├── report_template.html   # レポートHTMLテンプレート
 │   │       └── template_assessment.md # Markdownレポートテンプレート
 │   └── dmbok-consult/
-│       └── README.md                  # 壁打ち相談スキル
-├── .cursor/skills/                    # Cursor 向けトリガー（薄いラッパー）
-│   ├── dmbok-assess/SKILL.md
-│   └── dmbok-consult/SKILL.md
+│       └── SKILL.md                   # 壁打ち相談スキル
 └── output/                            # レポート出力先
 ```
 

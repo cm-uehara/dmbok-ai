@@ -1,3 +1,8 @@
+---
+name: dmbok-assess
+description: DMBOK（データマネジメント知識体系）の11領域に基づいてGitリポジトリやBacklogプロジェクトのデータマネジメント成熟度を診断・スコアリングし、改善ロードマップを含むレポートを出力する。「DMBOK診断して」「成熟度を評価して」「リポジトリを分析して」と依頼されたときに使用する。データ管理の現状把握、リポジトリの品質チェック、Backlogプロジェクトの評価、アセスメントなど、データマネジメントの状態を可視化したい場面でも積極的に使用する。
+---
+
 # DMBOK アセスメント（診断・スコアリング）
 
 ## 概要
@@ -20,16 +25,16 @@
 **Gitリポジトリの場合:**
 
 ```bash
-python skills/dmbok-assess/scripts/git_scan.py /path/to/target-repo
+python .claude/skills/dmbok-assess/scripts/git_scan.py /path/to/target-repo
 ```
 
 **Backlogエクスポートの場合:**
 
 ```bash
-python skills/dmbok-assess/scripts/backlog_scan.py /path/to/backlog-export
+python .claude/skills/dmbok-assess/scripts/backlog_scan.py /path/to/backlog-export
 ```
 
-両方がある場合は両方実行する。ツール実行前に `pip install -r skills/dmbok-assess/scripts/requirements.txt` が必要な場合がある。
+両方がある場合は両方実行する。ツール実行前に `pip install -r .claude/skills/dmbok-assess/scripts/requirements.txt` が必要な場合がある。
 
 ### Step 2.5: 深掘り調査（重要）
 
@@ -75,20 +80,20 @@ python skills/dmbok-assess/scripts/backlog_scan.py /path/to/backlog-export
 
 #### 4b. リッチレポート用 JSON の作成
 
-スコアリング結果を `output/assessment_YYYYMMDD.json` に保存する。JSON の構造は `skills/dmbok-assess/references/assessment_schema.json` を読んで準拠すること。
+スコアリング結果を `output/assessment_YYYYMMDD.json` に保存する。JSON の構造は `.claude/skills/dmbok-assess/references/assessment_schema.json` を読んで準拠すること。
 
 #### 4c. HTML/PDF レポート生成
 
 JSON を作成したら、以下のコマンドで HTML レポートを生成する:
 
 ```bash
-python skills/dmbok-assess/scripts/generate_report.py output/assessment_YYYYMMDD.json --out-dir output/
+python .claude/skills/dmbok-assess/scripts/generate_report.py output/assessment_YYYYMMDD.json --out-dir output/
 ```
 
 PDF も生成する場合は `--pdf` フラグを付ける（要 playwright）:
 
 ```bash
-python skills/dmbok-assess/scripts/generate_report.py output/assessment_YYYYMMDD.json --out-dir output/ --pdf
+python .claude/skills/dmbok-assess/scripts/generate_report.py output/assessment_YYYYMMDD.json --out-dir output/ --pdf
 ```
 
 生成されるファイル:
