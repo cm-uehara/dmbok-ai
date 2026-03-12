@@ -26,7 +26,7 @@ git clone <repository-url>
 cd dmbok-ai
 
 # 2. Python 依存パッケージをインストール
-pip install -r tools/requirements.txt
+pip install -r skills/dmbok-assess/scripts/requirements.txt
 
 # 3. (オプション) PDF生成を使う場合
 pip install playwright
@@ -66,10 +66,10 @@ Git リポジトリ /path/to/your-repo と Backlog エクスポート /path/to/b
 Agent が以下のフローを自動実行します:
 
 1. `knowledge/` のナレッジベースを読み込み
-2. `tools/git_scan.py` / `tools/backlog_scan.py` でデータ収集
+2. `skills/dmbok-assess/scripts/git_scan.py` / `backlog_scan.py` でデータ収集
 3. 11領域それぞれをスコアリング
 4. `output/` に Markdown + JSON を出力
-5. `tools/generate_report.py` でリッチ HTML（+ PDF）レポートを生成
+5. `skills/dmbok-assess/scripts/generate_report.py` でリッチ HTML（+ PDF）レポートを生成
 
 ### 壁打ち・相談
 
@@ -91,18 +91,18 @@ Agent を介さず、CLIツールを直接実行することもできます。
 
 ```bash
 # Git リポジトリの走査
-python tools/git_scan.py /path/to/repo
-python tools/git_scan.py /path/to/repo --output output/git_scan_result.md
+python skills/dmbok-assess/scripts/git_scan.py /path/to/repo
+python skills/dmbok-assess/scripts/git_scan.py /path/to/repo --output output/git_scan_result.md
 
 # Backlog エクスポートデータの走査
-python tools/backlog_scan.py /path/to/backlog-export
-python tools/backlog_scan.py /path/to/backlog-export --output output/backlog_scan_result.md
+python skills/dmbok-assess/scripts/backlog_scan.py /path/to/backlog-export
+python skills/dmbok-assess/scripts/backlog_scan.py /path/to/backlog-export --output output/backlog_scan_result.md
 
 # アセスメント結果 JSON から HTML レポート生成
-python tools/generate_report.py output/assessment_data.json --out-dir output/
+python skills/dmbok-assess/scripts/generate_report.py output/assessment_data.json --out-dir output/
 
 # HTML + PDF レポート生成
-python tools/generate_report.py output/assessment_data.json --out-dir output/ --pdf
+python skills/dmbok-assess/scripts/generate_report.py output/assessment_data.json --out-dir output/ --pdf
 ```
 
 ## プロジェクト構成
@@ -124,22 +124,27 @@ dmbok-ai/
 │   ├── 09_data_warehousing_and_bi.md      #   データウェアハウスと BI
 │   ├── 10_metadata_management.md          #   メタデータ管理
 │   └── 11_data_quality.md                 #   データ品質
-├── tools/                                 # データ収集・レポート生成ツール
-│   ├── git_scan.py                        #   Git リポジトリ走査
-│   ├── backlog_scan.py                    #   Backlog エクスポートデータ走査
-│   ├── generate_report.py                 #   HTML/PDF リッチレポート生成
-│   ├── report_template.html               #   レポート HTML テンプレート
-│   ├── assessment_schema.json             #   アセスメント結果 JSON スキーマ
-│   └── requirements.txt                   #   Python 依存パッケージ
+├── CLAUDE.md                              # Claude Code 向け指示
+├── skills/                                # スキル本体（環境非依存）
+│   ├── dmbok-assess/                      #   DMBOK 診断スキル
+│   │   ├── README.md                      #   スキルの指示本体
+│   │   ├── scripts/                       #   データ収集・レポート生成ツール
+│   │   │   ├── git_scan.py
+│   │   │   ├── backlog_scan.py
+│   │   │   ├── generate_report.py
+│   │   │   └── requirements.txt
+│   │   ├── references/
+│   │   │   └── assessment_schema.json     #   アセスメント結果 JSON スキーマ
+│   │   └── assets/
+│   │       └── report_template.html       #   レポート HTML テンプレート
+│   └── dmbok-consult/
+│       └── README.md                      #   壁打ち相談スキル
+├── .cursor/skills/                        # Cursor 向けトリガー（薄いラッパー）
+│   ├── dmbok-assess/SKILL.md
+│   └── dmbok-consult/SKILL.md
 ├── output/                                # レポート出力先
 │   ├── TEMPLATE_assessment.md             #   Markdown レポートテンプレート
 │   └── sample_assessment_data.json        #   サンプルデータ（動作確認用）
-└── .cursor/
-    ├── skills/
-    │   ├── dmbok-assess/SKILL.md          #   DMBOK 診断スキル
-    │   └── dmbok-consult/SKILL.md         #   壁打ち相談スキル
-    └── rules/
-        └── dmbok-scoring.mdc              #   スコアリングルール
 ```
 
 ## DMBOK 11 の知識領域
@@ -182,4 +187,4 @@ dmbok-ai/
 
 ### レポートデザインの調整
 
-`tools/report_template.html` を編集することで、レポートの見た目をカスタマイズできます。
+`skills/dmbok-assess/assets/report_template.html` を編集することで、レポートの見た目をカスタマイズできます。

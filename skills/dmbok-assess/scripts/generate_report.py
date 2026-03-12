@@ -4,11 +4,11 @@ DMBOK アセスメント結果から、リッチな HTML レポートと PDF を
 Agent がスコアリング結果を JSON で出力し、本ツールで HTML/PDF に変換する。
 
 使い方:
-    python tools/generate_report.py output/assessment_data.json
-    python tools/generate_report.py output/assessment_data.json --pdf
-    python tools/generate_report.py output/assessment_data.json --out-dir output/
+    python skills/dmbok-assess/scripts/generate_report.py output/assessment_data.json
+    python skills/dmbok-assess/scripts/generate_report.py output/assessment_data.json --pdf
+    python skills/dmbok-assess/scripts/generate_report.py output/assessment_data.json --out-dir output/
 
-入力 JSON の形式は tools/assessment_schema.json を参照。
+入力 JSON の形式は skills/dmbok-assess/references/assessment_schema.json を参照。
 """
 
 import argparse
@@ -41,7 +41,7 @@ DOMAIN_LABELS_SHORT = [
 
 
 def load_template() -> str:
-    template_path = Path(__file__).parent / "report_template.html"
+    template_path = Path(__file__).parent / "../assets/report_template.html"
     with open(template_path, "r", encoding="utf-8") as f:
         return f.read()
 

@@ -26,37 +26,31 @@ dmbok-ai/
 │   ├── 09_data_warehousing_and_bi.md  # DWHとBI
 │   ├── 10_metadata_management.md      # メタデータ管理
 │   └── 11_data_quality.md             # データ品質
-├── tools/                             # データ収集・レポート生成ツール（Python CLI）
-│   ├── git_scan.py                    # Gitリポジトリ走査
-│   ├── backlog_scan.py                # Backlogエクスポートデータ走査
-│   ├── generate_report.py             # HTML/PDFリッチレポート生成
-│   ├── report_template.html           # レポートHTMLテンプレート
-│   ├── assessment_schema.json         # アセスメント結果JSONスキーマ
-│   └── requirements.txt               # Python依存パッケージ
-├── .cursor/
-│   ├── skills/
-│   │   ├── dmbok-assess/SKILL.md      # DMBOK診断スキル
-│   │   └── dmbok-consult/SKILL.md     # 壁打ち相談スキル
-│   └── rules/
-│       └── dmbok-scoring.mdc          # スコアリングルール
+├── CLAUDE.md                          # Claude Code 向け指示
+├── skills/                            # スキル本体（環境非依存）
+│   ├── dmbok-assess/                  # DMBOK診断スキル
+│   │   ├── README.md                  # スキルの指示本体
+│   │   ├── scripts/                   # データ収集・レポート生成ツール
+│   │   │   ├── git_scan.py            # Gitリポジトリ走査
+│   │   │   ├── backlog_scan.py        # Backlogエクスポートデータ走査
+│   │   │   ├── generate_report.py     # HTML/PDFリッチレポート生成
+│   │   │   └── requirements.txt       # Python依存パッケージ
+│   │   ├── references/
+│   │   │   └── assessment_schema.json # アセスメント結果JSONスキーマ
+│   │   └── assets/
+│   │       └── report_template.html   # レポートHTMLテンプレート
+│   └── dmbok-consult/
+│       └── README.md                  # 壁打ち相談スキル
+├── .cursor/skills/                    # Cursor 向けトリガー（薄いラッパー）
+│   ├── dmbok-assess/SKILL.md
+│   └── dmbok-consult/SKILL.md
 └── output/                            # レポート出力先
 ```
 
 ## 使い方
 
-### DMBOK診断（アセスメント）
-
-「このリポジトリをDMBOK診断して」のように依頼すると、dmbok-assess スキルが起動する。
-
-1. ナレッジベース（`knowledge/`）を読み込み
-2. 収集ツール（`tools/git_scan.py`, `tools/backlog_scan.py`）を実行
-3. 11領域ごとにスコアリング
-4. Markdownレポート + JSON を `output/` に出力
-5. `tools/generate_report.py` でリッチ HTML/PDF レポートを生成
-
-### 壁打ち・相談
-
-「データガバナンスについて相談したい」のように依頼すると、dmbok-consult スキルが起動する。ナレッジベースに基づいて対話的にアドバイスする。
+* **DMBOK診断**: 「このリポジトリをDMBOK診断して」→ dmbok-assess スキルが実行フローを案内する
+* **壁打ち・相談**: 「データガバナンスについて相談したい」→ dmbok-consult スキルが対話的にアドバイスする
 
 ## Agentへの指示
 
