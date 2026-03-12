@@ -38,7 +38,8 @@ dmbok-ai/
 │   │   ├── references/
 │   │   │   └── assessment_schema.json # アセスメント結果JSONスキーマ
 │   │   └── assets/
-│   │       └── report_template.html   # レポートHTMLテンプレート
+│   │       ├── report_template.html   # レポートHTMLテンプレート
+│   │       └── template_assessment.md # Markdownレポートテンプレート
 │   └── dmbok-consult/
 │       └── README.md                  # 壁打ち相談スキル
 ├── .cursor/skills/                    # Cursor 向けトリガー（薄いラッパー）

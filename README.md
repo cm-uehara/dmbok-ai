@@ -136,14 +136,14 @@ dmbok-ai/
 │   │   ├── references/
 │   │   │   └── assessment_schema.json     #   アセスメント結果 JSON スキーマ
 │   │   └── assets/
-│   │       └── report_template.html       #   レポート HTML テンプレート
+│   │       ├── report_template.html       #   レポート HTML テンプレート
+│   │       └── template_assessment.md     #   Markdown レポートテンプレート
 │   └── dmbok-consult/
 │       └── README.md                      #   壁打ち相談スキル
 ├── .cursor/skills/                        # Cursor 向けトリガー（薄いラッパー）
 │   ├── dmbok-assess/SKILL.md
 │   └── dmbok-consult/SKILL.md
 ├── output/                                # レポート出力先
-│   ├── TEMPLATE_assessment.md             #   Markdown レポートテンプレート
 │   └── sample_assessment_data.json        #   サンプルデータ（動作確認用）
 ```
 
