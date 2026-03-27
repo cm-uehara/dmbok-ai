@@ -10,6 +10,7 @@ Cursor や Claude Code のスキルとして動作し、対話的な壁打ち相
 - **リッチなレポート出力** — Markdown / HTML（レーダーチャート付き） / PDF の3形式
 - **データ収集の自動化** — Gitリポジトリの構造解析、Backlogエクスポートデータの分析
 - **壁打ち・相談機能** — データガバナンス推進の相談相手として対話的にアドバイス
+- **差分比較・推移分析** — 複数時点のアセスメントを比較し、改善/悪化をオーバーレイレーダーチャートで可視化
 - **Cursor / Claude Code ネイティブ** — API不要、スキルとしてそのまま動作
 
 ## 前提条件
@@ -71,6 +72,25 @@ Agent が以下のフローを自動実行します:
 4. `output/` に Markdown + JSON を出力
 5. `.claude/skills/dmbok-assess/scripts/generate_report.py` でリッチ HTML（+ PDF）レポートを生成
 
+### 差分比較・推移分析
+
+過去のアセスメントと比較して、改善状況を確認できます。
+
+```
+前回の診断と比較して
+```
+
+```
+assessment_20250101 と assessment_20260101 の差分を見せて
+```
+
+Agent が以下のフローを自動実行します:
+
+1. `output/` 内の複数のアセスメント JSON を特定
+2. 11領域のスコア変化・課題の解消/発生を分析
+3. 前回ロードマップの進捗を確認
+4. `output/` に Markdown + HTML 差分レポートを出力
+
 ### 壁打ち・相談
 
 データマネジメントに関する相談もできます。
@@ -103,6 +123,12 @@ python .claude/skills/dmbok-assess/scripts/generate_report.py output/assessment_
 
 # HTML + PDF レポート生成
 python .claude/skills/dmbok-assess/scripts/generate_report.py output/assessment_data.json --out-dir output/ --pdf
+
+# 2つのアセスメント結果を比較した差分 HTML レポート生成
+python .claude/skills/dmbok-diff/scripts/generate_diff_report.py output/assessment_before.json output/assessment_after.json --out-dir output/
+
+# 差分 HTML + PDF レポート生成
+python .claude/skills/dmbok-diff/scripts/generate_diff_report.py output/assessment_before.json output/assessment_after.json --out-dir output/ --pdf
 ```
 
 ## プロジェクト構成
@@ -137,8 +163,14 @@ dmbok-ai/
 │   │   └── assets/
 │   │       ├── report_template.html       #   レポート HTML テンプレート
 │   │       └── template_assessment.md     #   Markdown レポートテンプレート
-│   └── dmbok-consult/
-│       └── SKILL.md                       #   壁打ち相談スキル
+│   ├── dmbok-consult/
+│   │   └── SKILL.md                       #   壁打ち相談スキル
+│   └── dmbok-diff/                        #   差分比較スキル
+│       ├── SKILL.md                       #   スキル定義（frontmatter + 指示）
+│       ├── scripts/
+│       │   └── generate_diff_report.py    #   差分比較 HTML レポート生成
+│       └── assets/
+│           └── diff_report_template.html  #   差分レポート HTML テンプレート
 ├── output/                                # レポート出力先
 │   └── sample_assessment_data.json        #   サンプルデータ（動作確認用）
 ```
