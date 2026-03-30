@@ -1,0 +1,12 @@
+# 実行結果（実データが含まれる可能性がある）
+/output/assessment_*.md
+/output/assessment_*.json
+/output/assessment_*.html
+/output/assessment_*.pdf
+/output/diff_*.md
+/output/diff_*.json
+/output/diff_*.html
+/output/diff_*.pdf
+
+# 環境
+.venv/

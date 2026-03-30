@@ -1,0 +1,106 @@
+{
+  "target": "sample-project (サンプル)",
+  "date": "2025-03-03",
+  "data_sources": ["Git リポジトリ"],
+  "executive_summary": "全体として成熟度レベル1〜2の段階にあり、属人的な管理が中心で標準化が進んでいない。セキュリティの基本対策は講じられているが、ガバナンス・メタデータ管理・データ品質の整備が急務である。",
+  "scores": [
+    {
+      "id": 1, "domain": "データガバナンス", "score": 1, "level": "初期",
+      "findings": "ガバナンスの仕組みが存在せず属人的な管理",
+      "strengths": ["PR レビュープロセスが存在する"],
+      "issues": ["データオーナーが定義されていない", "ガバナンスポリシー文書が存在しない", "CONTRIBUTING.md が未整備"],
+      "recommendations": ["CONTRIBUTING.md の作成", "データオーナー・スチュワードの任命検討"]
+    },
+    {
+      "id": 2, "domain": "データアーキテクチャ", "score": 2, "level": "反復可能",
+      "findings": "一部にアーキテクチャ図があるが最新でない",
+      "strengths": ["docs/ ディレクトリに構成図がある"],
+      "issues": ["アーキテクチャ図が古い", "API仕様書が未整備", "ADR が導入されていない"],
+      "recommendations": ["アーキテクチャ図の更新", "OpenAPI 仕様の整備"]
+    },
+    {
+      "id": 3, "domain": "データモデリングとデザイン", "score": 2, "level": "反復可能",
+      "findings": "DDL は存在するが命名規則にばらつきがある",
+      "strengths": ["Alembic によるマイグレーション管理"],
+      "issues": ["命名規則が統一されていない", "ER図が存在しない", "外部キー制約が未設定のテーブルが多い"],
+      "recommendations": ["命名規則の策定と統一", "外部キー制約の見直し"]
+    },
+    {
+      "id": 4, "domain": "データストレージとオペレーション", "score": 2, "level": "反復可能",
+      "findings": "バックアップはあるがリストアテスト未実施",
+      "strengths": ["docker-compose.yml でローカル環境が再現可能"],
+      "issues": ["日次バックアップスクリプトが未整備", "リストアテスト手順がない", "パフォーマンス監視が未導入"],
+      "recommendations": ["バックアップスクリプトの整備", "リストアテスト手順の策定"]
+    },
+    {
+      "id": 5, "domain": "データセキュリティ", "score": 3, "level": "定義済み",
+      "findings": ".env がコミットされておらず基本的なセキュリティ対策あり",
+      "strengths": [".gitignore で機密ファイルを適切に除外", "RBAC による認可が実装済み"],
+      "issues": ["CI にセキュリティスキャンがない", "データマスキング方針が未策定", "監査ログの保持期間が未定義"],
+      "recommendations": ["GitHub Actions に dependabot と SAST を設定", "データマスキング方針の策定"]
+    },
+    {
+      "id": 6, "domain": "データ統合と相互運用性", "score": 2, "level": "反復可能",
+      "findings": "REST API はあるが標準化が不十分",
+      "strengths": ["基本的な API が存在する"],
+      "issues": ["OpenAPI 仕様が未策定", "リトライ機構が未実装", "データリネージが追跡できない"],
+      "recommendations": ["OpenAPI に基づく API 設計の標準化", "リトライ機構の実装"]
+    },
+    {
+      "id": 7, "domain": "ドキュメントとコンテンツ管理", "score": 2, "level": "反復可能",
+      "findings": "README はあるが docs/ の整備が不十分",
+      "strengths": ["README.md にセットアップ手順が記載"],
+      "issues": ["docs/ ディレクトリの内容が不足", "ドキュメントのレビュー体制がない", "CHANGELOG.md が未整備"],
+      "recommendations": ["docs/ への設計書集約", "CHANGELOG.md の運用開始"]
+    },
+    {
+      "id": 8, "domain": "参照データとマスターデータ", "score": 1, "level": "初期",
+      "findings": "マスターデータの管理が未着手",
+      "strengths": ["一部の区分値がハードコーディングされている"],
+      "issues": ["Enum 定義がない", "マスターデータの一覧・定義文書がない", "複数システム間で顧客データが重複"],
+      "recommendations": ["主要な区分値の Enum 化", "マスターデータ一覧の策定"]
+    },
+    {
+      "id": 9, "domain": "データウェアハウスとBI", "score": 1, "level": "初期",
+      "findings": "分析基盤がなく Excel ベースの分析",
+      "strengths": ["分析ニーズの認識はある"],
+      "issues": ["DWH / データマートが未構築", "KPI が定義されていない", "Excel での手動集計が主流"],
+      "recommendations": ["主要 KPI の定義ワークショップ実施", "簡易 BI ツールの導入検討"]
+    },
+    {
+      "id": 10, "domain": "メタデータ管理", "score": 1, "level": "初期",
+      "findings": "テーブルコメントやデータ辞書が存在しない",
+      "strengths": ["ORM モデルに一部 docstring がある"],
+      "issues": ["DDL にテーブル・カラムコメントがない", "データカタログが未導入", "ビジネス用語集が存在しない"],
+      "recommendations": ["DDL へのコメント追加を必須ルール化", "ビジネス用語集の策定開始"]
+    },
+    {
+      "id": 11, "domain": "データ品質", "score": 1, "level": "初期",
+      "findings": "バリデーションが不十分で品質管理の仕組みがない",
+      "strengths": ["一部カラムに NOT NULL 制約が設定"],
+      "issues": ["入力バリデーションが不足", "データ品質の定量的な測定がない", "重複検知の仕組みがない"],
+      "recommendations": ["入力バリデーションの強化", "データ品質テストフレームワークの導入検討"]
+    }
+  ],
+  "roadmap": {
+    "short_term": [
+      { "priority": "高", "domain": "データガバナンス", "action": "CONTRIBUTING.md の作成", "impact": "開発ルールの明文化" },
+      { "priority": "高", "domain": "データセキュリティ", "action": "CI へのセキュリティスキャン導入", "impact": "脆弱性の早期検知" },
+      { "priority": "中", "domain": "ドキュメント管理", "action": "docs/ ディレクトリの整備", "impact": "ナレッジの集約" }
+    ],
+    "mid_term": [
+      { "priority": "高", "domain": "データガバナンス", "action": "データオーナーの任命", "impact": "責任の明確化" },
+      { "priority": "中", "domain": "データアーキテクチャ", "action": "OpenAPI 仕様の整備", "impact": "API 連携の標準化" },
+      { "priority": "中", "domain": "メタデータ管理", "action": "DDL コメント追加の必須ルール化", "impact": "データの理解容易性向上" }
+    ],
+    "long_term": [
+      { "priority": "中", "domain": "DWH/BI", "action": "簡易 BI ツールの導入検討", "impact": "データドリブンな意思決定の基盤" },
+      { "priority": "中", "domain": "マスターデータ", "action": "マスターデータ一覧の策定", "impact": "データ一貫性の確保" }
+    ]
+  },
+  "limitations": [
+    "リポジトリのコードと設定ファイルのみから評価しており、運用プロセスや組織体制は評価対象外",
+    "Backlog は評価対象に含まれていない",
+    "DWH/BI の評価はインフラ構成の有無のみで判断しており、実際の分析活用度は未確認"
+  ]
+}
