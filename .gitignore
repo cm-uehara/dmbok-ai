@@ -1,4 +1,4 @@
-# 実行結果（実データが含まれる可能性がある）
+# Execution results (may contain actual data)
 /output/assessment_*.md
 /output/assessment_*.json
 /output/assessment_*.html
@@ -8,5 +8,26 @@
 /output/diff_*.html
 /output/diff_*.pdf
 
-# 環境
-.venv/
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[codz]
+*$py.class
+
+# UV
+uv.lock
+
+# Environments
+.env
+.envrc
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Visual Studio Code
+.vscode/
+
+# Ruff stuff:
+.ruff_cache/
