@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DMBOK 差分比較レポート — {{ target }}</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  :root {
+    --c-primary: #1e3a5f;
+    --c-accent: #2563eb;
+    --c-bg: #f8fafc;
+    --c-surface: #ffffff;
+    --c-border: #e2e8f0;
+    --c-text: #1e293b;
+    --c-muted: #64748b;
+    --c-improved: #16a34a;
+    --c-improved-bg: #f0fdf4;
+    --c-regressed: #dc2626;
+    --c-regressed-bg: #fef2f2;
+    --c-unchanged: #64748b;
+    --c-unchanged-bg: #f8fafc;
+    --radius: 10px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Segoe UI", sans-serif;
+    background: var(--c-bg);
+    color: var(--c-text);
+    line-height: 1.7;
+    font-size: 14px;
+  }
+  .container { max-width: 1080px; margin: 0 auto; padding: 24px; }
+
+  /* ===== Header ===== */
+  .report-header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #7c3aed 100%);
+    color: #fff;
+    padding: 48px 40px;
+    border-radius: var(--radius);
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .report-header::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 500px;
+    height: 500px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+  }
+  .report-header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; position: relative; }
+  .report-header .subtitle { font-size: 15px; opacity: 0.85; position: relative; }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 24px;
+    position: relative;
+  }
+  .meta-item { background: rgba(255,255,255,0.12); border-radius: 8px; padding: 12px 16px; }
+  .meta-item .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7; }
+  .meta-item .value { font-size: 15px; font-weight: 600; margin-top: 2px; }
+
+  /* ===== Cards ===== */
+  .card {
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .card h2 { font-size: 20px; color: var(--c-primary); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #7c3aed; }
+  .card h3 { font-size: 16px; color: var(--c-primary); margin: 20px 0 10px; }
+
+  /* ===== Delta Indicator ===== */
+  .delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 2px 10px;
+    border-radius: 999px;
+  }
+  .delta.up { color: var(--c-improved); background: var(--c-improved-bg); }
+  .delta.down { color: var(--c-regressed); background: var(--c-regressed-bg); }
+  .delta.same { color: var(--c-unchanged); background: var(--c-unchanged-bg); }
+
+  /* ===== Summary Boxes ===== */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .summary-box {
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    text-align: center;
+  }
+  .summary-box .count { font-size: 40px; font-weight: 800; line-height: 1; }
+  .summary-box .label { font-size: 13px; margin-top: 6px; font-weight: 600; }
+  .summary-box.improved { background: var(--c-improved-bg); border: 1px solid #bbf7d0; }
+  .summary-box.improved .count { color: var(--c-improved); }
+  .summary-box.regressed { background: var(--c-regressed-bg); border: 1px solid #fecaca; }
+  .summary-box.regressed .count { color: var(--c-regressed); }
+  .summary-box.unchanged { background: var(--c-unchanged-bg); border: 1px solid var(--c-border); }
+  .summary-box.unchanged .count { color: var(--c-unchanged); }
+
+  /* ===== Score Big ===== */
+  .score-compare {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .score-compare .number { font-size: 48px; font-weight: 800; line-height: 1; }
+  .score-compare .arrow { font-size: 32px; color: var(--c-muted); }
+  .score-compare .of { font-size: 18px; color: var(--c-muted); }
+  .score-compare .desc { font-size: 12px; color: var(--c-muted); margin-top: 4px; text-align: center; }
+  .score-block { text-align: center; }
+
+  /* ===== Table ===== */
+  th {
+    background: #f1f5f9;
+    font-weight: 600;
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--c-border);
+    color: var(--c-primary);
+    white-space: nowrap;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--c-border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8fafc; }
+
+  /* ===== Score Badge ===== */
+  .score-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 16px;
+    border: 2px solid;
+  }
+
+  /* ===== Radar Chart ===== */
+  .chart-container { max-width: 520px; margin: 0 auto; padding: 10px 0 20px; }
+
+  /* ===== Domain Detail ===== */
+  .domain-card {
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .domain-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 24px;
+    border-left: 4px solid;
+  }
+  .domain-header .domain-num { font-size: 12px; color: var(--c-muted); font-weight: 600; }
+  .domain-header .domain-name { font-size: 16px; font-weight: 700; flex: 1; }
+  .domain-body { padding: 16px 24px 20px; background: #fafbfc; }
+  .domain-body h4 { font-size: 13px; font-weight: 700; color: var(--c-primary); margin: 14px 0 6px; }
+  .domain-body h4:first-child { margin-top: 0; }
+  .domain-body ul { margin: 0; padding-left: 20px; }
+  .domain-body li { margin-bottom: 4px; font-size: 13px; line-height: 1.6; }
+  .domain-body li.resolved { color: var(--c-improved); }
+  .domain-body li.new-issue { color: var(--c-regressed); }
+
+  /* ===== Table overflow ===== */
+  .table-wrap { width: 100%; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+  td, th { word-wrap: break-word; overflow-wrap: break-word; }
+
+  /* ===== Footer ===== */
+  .report-footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--c-muted);
+    font-size: 12px;
+    border-top: 1px solid var(--c-border);
+    margin-top: 16px;
+  }
+
+  /* ===== Print / PDF ===== */
+  @media print {
+    body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .container { padding: 0; max-width: 100%; width: 100%; }
+    .card { box-shadow: none; break-inside: avoid; }
+    .domain-card { break-inside: avoid; }
+    .report-header { padding: 32px 28px; border-radius: 6px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ===== HEADER ===== -->
+  <div class="report-header">
+    <h1>DMBOK 差分比較レポート</h1>
+    <div class="subtitle">アセスメント比較・推移分析</div>
+    <div class="meta-grid">
+      <div class="meta-item">
+        <div class="label">対象</div>
+        <div class="value">{{ target }}</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">前回</div>
+        <div class="value">{{ before_date }}</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">今回</div>
+        <div class="value">{{ after_date }}</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">平均スコア変化</div>
+        <div class="value">{{ before_avg }} → {{ after_avg }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCORE COMPARISON ===== -->
+  <div class="card">
+    <h2>総合スコア比較</h2>
+    <div class="score-compare">
+      <div class="score-block">
+        <div class="number" style="color:var(--c-muted)">{{ before_avg }}</div>
+        <div class="desc">前回 ({{ before_date }})</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="score-block">
+        <div class="number" style="color:var(--c-accent)">{{ after_avg }}</div>
+        <div class="desc">今回 ({{ after_date }})</div>
+      </div>
+      <div style="margin-left:12px">
+        {% if avg_delta > 0 %}
+        <span class="delta up">+{{ avg_delta }}</span>
+        {% elif avg_delta < 0 %}
+        <span class="delta down">{{ avg_delta }}</span>
+        {% else %}
+        <span class="delta same">±0</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="summary-grid">
+      <div class="summary-box improved">
+        <div class="count">{{ improved_count }}</div>
+        <div class="label">改善</div>
+      </div>
+      <div class="summary-box regressed">
+        <div class="count">{{ regressed_count }}</div>
+        <div class="label">悪化</div>
+      </div>
+      <div class="summary-box unchanged">
+        <div class="count">{{ unchanged_count }}</div>
+        <div class="label">維持</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCORE TABLE ===== -->
+  <div class="card">
+    <h2>領域別スコア比較</h2>
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:5%">#</th>
+          <th style="width:20%">領域</th>
+          <th style="width:12%;text-align:center">前回</th>
+          <th style="width:12%;text-align:center">今回</th>
+          <th style="width:12%;text-align:center">変化</th>
+          <th style="width:39%">コメント</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in domains %}
+        <tr>
+          <td>{{ d.id }}</td>
+          <td style="font-weight:600">{{ d.domain }}</td>
+          <td style="text-align:center">
+            <span class="score-badge" style="background:{{ d.before_color_bg }};border-color:{{ d.before_color_border }};color:{{ d.before_color_text }}">{{ d.before_score }}</span>
+          </td>
+          <td style="text-align:center">
+            <span class="score-badge" style="background:{{ d.after_color_bg }};border-color:{{ d.after_color_border }};color:{{ d.after_color_text }}">{{ d.after_score }}</span>
+          </td>
+          <td style="text-align:center">
+            {% if d.delta > 0 %}
+            <span class="delta up">+{{ d.delta }}</span>
+            {% elif d.delta < 0 %}
+            <span class="delta down">{{ d.delta }}</span>
+            {% else %}
+            <span class="delta same">±0</span>
+            {% endif %}
+          </td>
+          <td style="font-size:12.5px;color:var(--c-muted)">{{ d.comment }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- ===== RADAR CHART ===== -->
+  <div class="card">
+    <h2>成熟度レーダーチャート（前回 vs 今回）</h2>
+    <div class="chart-container">
+      <canvas id="radarChart"></canvas>
+    </div>
+  </div>
+
+  <!-- ===== DOMAIN DETAILS ===== -->
+  {% for d in domains %}
+  {% if d.delta != 0 or d.resolved_issues or d.new_issues or d.new_strengths or d.lost_strengths %}
+  <div class="card">
+    <h2>
+      #{{ "%02d"|format(d.id) }} {{ d.domain }}
+      {% if d.delta > 0 %}
+      <span class="delta up" style="font-size:14px;vertical-align:middle;margin-left:8px">+{{ d.delta }}</span>
+      {% elif d.delta < 0 %}
+      <span class="delta down" style="font-size:14px;vertical-align:middle;margin-left:8px">{{ d.delta }}</span>
+      {% endif %}
+    </h2>
+
+    {% if d.new_strengths %}
+    <h3>新たに認められた強み</h3>
+    <ul>{% for item in d.new_strengths %}<li style="color:var(--c-improved)">{{ item }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    {% if d.lost_strengths %}
+    <h3>失われた強み</h3>
+    <ul>{% for item in d.lost_strengths %}<li style="color:var(--c-regressed)">{{ item }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    {% if d.resolved_issues %}
+    <h3>解消された課題</h3>
+    <ul>{% for item in d.resolved_issues %}<li style="color:var(--c-improved)">{{ item }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    {% if d.new_issues %}
+    <h3>新たに発生した課題</h3>
+    <ul>{% for item in d.new_issues %}<li style="color:var(--c-regressed)">{{ item }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    {% if d.continuing_issues %}
+    <h3>継続中の課題</h3>
+    <ul>{% for item in d.continuing_issues %}<li>{{ item }}</li>{% endfor %}</ul>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% endfor %}
+
+  <!-- ===== ROADMAP PROGRESS ===== -->
+  {% if roadmap_progress %}
+  <div class="card">
+    <h2>前回ロードマップの進捗</h2>
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:10%">時期</th>
+          <th style="width:15%">領域</th>
+          <th style="width:40%">アクション</th>
+          <th style="width:10%;text-align:center">状態</th>
+          <th style="width:25%">備考</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in roadmap_progress %}
+        <tr>
+          <td>{{ r.phase }}</td>
+          <td>{{ r.domain }}</td>
+          <td>{{ r.action }}</td>
+          <td style="text-align:center">
+            {% if r.status == "done" %}
+            <span class="delta up">達成</span>
+            {% elif r.status == "partial" %}
+            <span class="delta same">一部</span>
+            {% else %}
+            <span class="delta down">未着手</span>
+            {% endif %}
+          </td>
+          <td style="font-size:12.5px;color:var(--c-muted)">{{ r.note }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ===== FOOTER ===== -->
+  <div class="report-footer">
+    このレポートは DMBOK AI Diff Skill により自動生成されました。 | 生成日時: {{ generation_time }}
+  </div>
+
+</div>
+
+<script>
+const ctx = document.getElementById('radarChart').getContext('2d');
+const labels = {{ domain_labels_json | safe }};
+const beforeValues = {{ before_values_json | safe }};
+const afterValues = {{ after_values_json | safe }};
+
+new Chart(ctx, {
+  type: 'radar',
+  data: {
+    labels: labels,
+    datasets: [
+      {
+        label: '前回 ({{ before_date }})',
+        data: beforeValues,
+        backgroundColor: 'rgba(148, 163, 184, 0.12)',
+        borderColor: 'rgba(148, 163, 184, 0.6)',
+        borderWidth: 2,
+        borderDash: [6, 3],
+        pointBackgroundColor: 'rgba(148, 163, 184, 0.8)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+      },
+      {
+        label: '今回 ({{ after_date }})',
+        data: afterValues,
+        backgroundColor: 'rgba(37, 99, 235, 0.15)',
+        borderColor: 'rgba(37, 99, 235, 0.8)',
+        borderWidth: 2,
+        pointBackgroundColor: 'rgba(37, 99, 235, 1)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: true,
+    scales: {
+      r: {
+        min: 0,
+        max: 5,
+        ticks: { stepSize: 1, font: { size: 11 }, backdropColor: 'transparent' },
+        grid: { color: 'rgba(0,0,0,0.08)' },
+        angleLines: { color: 'rgba(0,0,0,0.08)' },
+        pointLabels: { font: { size: 12, weight: '600' }, color: '#1e293b' },
+      }
+    },
+    plugins: {
+      legend: {
+        display: true,
+        position: 'bottom',
+        labels: { font: { size: 12 }, padding: 20 },
+      },
+    },
+    animation: { duration: 0 },
+  }
+});
+</script>
+</body>
+</html>

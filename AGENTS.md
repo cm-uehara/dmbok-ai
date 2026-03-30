@@ -39,15 +39,26 @@ dmbok-ai/
 │   │   └── assets/
 │   │       ├── report_template.html   # レポートHTMLテンプレート
 │   │       └── template_assessment.md # Markdownレポートテンプレート
-│   └── dmbok-consult/
-│       └── SKILL.md                   # 壁打ち相談スキル
+│   ├── dmbok-arch-suggest/             # アーキテクチャ提案スキル
+│   │   ├── SKILL.md                   # スキル定義（frontmatter + 指示）
+│   │   └── references/                # ソリューション設計方針・パターン（個別用意）
+│   ├── dmbok-consult/
+│   │   └── SKILL.md                   # 壁打ち相談スキル
+│   └── dmbok-diff/                    # 差分比較スキル
+│       ├── SKILL.md                   # スキル定義（frontmatter + 指示）
+│       ├── scripts/
+│       │   └── generate_diff_report.py # 差分比較HTMLレポート生成
+│       └── assets/
+│           └── diff_report_template.html # 差分レポートHTMLテンプレート
 └── output/                            # レポート出力先
 ```
 
 ## 使い方
 
 * **DMBOK診断**: 「このリポジトリをDMBOK診断して」→ dmbok-assess スキルが実行フローを案内する
+* **アーキテクチャ提案**: 「改善案を出して」「どう直せばいい？」→ dmbok-arch-suggest スキルがアセスメント結果に基づきアーキテクチャを提案する
 * **壁打ち・相談**: 「データガバナンスについて相談したい」→ dmbok-consult スキルが対話的にアドバイスする
+* **差分比較**: 「前回と比較して」「改善できたか確認して」→ dmbok-diff スキルがスコア推移と変化を分析する
 
 ## Agentへの指示
 
