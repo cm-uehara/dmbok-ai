@@ -13,6 +13,7 @@ HTML レポート（+ PDF）を生成する。
 """
 
 import argparse
+import difflib
 import json
 import os
 import sys
@@ -73,7 +74,7 @@ def diff_lists(before_list: list, after_list: list) -> tuple:
             # 一方が他方の部分文字列、または共通部分が十分長い
             if b_norm in a_norm or a_norm in b_norm:
                 similar_pairs.append((b, a))
-            elif len(set(b_norm) & set(a_norm)) / max(len(set(b_norm)), len(set(a_norm)), 1) > 0.7:
+            elif difflib.SequenceMatcher(None, b_norm, a_norm).ratio() > 0.7:
                 similar_pairs.append((b, a))
 
     fuzzy_continuing_before = set()
@@ -178,27 +179,35 @@ def build_comparison(before: dict, after: dict) -> dict:
         "mid_term": "中期",
         "long_term": "長期",
     }
+
+    # domain名 → id のマッピングを構築（before/after 両方のスコアから収集）
+    domain_name_to_id = {}
+    for s in before.get("scores", []) + after.get("scores", []):
+        domain_name_to_id[s["domain"]] = s["id"]
+    # domains リストを id でアクセスできるよう dict 化
+    domains_by_id = {d["id"]: d for d in domains}
+
     for phase_key, phase_label in phase_map.items():
         items = before_roadmap.get(phase_key, [])
         for item in items:
             domain_name = item.get("domain", "")
             action = item.get("action", "")
 
-            # 対応する領域のスコア変化から進捗を推定
+            # id ベースで対応する領域を特定
             status = "not_started"
             note = ""
-            for d in domains:
-                if domain_name in d["domain"] or d["domain"] in domain_name:
-                    if d["delta"] > 0:
-                        status = "done"
-                        note = f"スコアが {d['before_score']} → {d['after_score']} に改善"
-                    elif d["resolved_issues"]:
-                        status = "partial"
-                        note = f"一部の課題が解消（スコアは {d['after_score']} で維持）"
-                    else:
-                        status = "not_started"
-                        note = f"スコアに変化なし（{d['after_score']}）"
-                    break
+            matched_id = domain_name_to_id.get(domain_name)
+            d = domains_by_id.get(matched_id) if matched_id is not None else None
+            if d is not None:
+                if d["delta"] > 0:
+                    status = "done"
+                    note = f"スコアが {d['before_score']} → {d['after_score']} に改善"
+                elif d["resolved_issues"]:
+                    status = "partial"
+                    note = f"一部の課題が解消（スコアは {d['after_score']} で維持）"
+                else:
+                    status = "not_started"
+                    note = f"スコアに変化なし（{d['after_score']}）"
 
             roadmap_progress.append({
                 "phase": phase_label,
